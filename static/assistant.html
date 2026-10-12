@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SQL Assistant — Chinook demo</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #162832; background: #f5f7f4; font-synthesis: none; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 50% -15%, #e8eee8 0, transparent 50%), #f5f7f4; }
+    a { color: inherit; text-decoration: none; }
+    .topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; max-width: 1180px; padding: 0 28px; margin: 0 auto; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: .91rem; font-weight: 760; letter-spacing: -.02em; }
+    .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: #c9f779; background: #19332e; font-size: .95rem; }
+    .nav-link { display: inline-flex; align-items: center; gap: 9px; color: #466b56; font-size: .86rem; font-weight: 700; }
+    .nav-link:hover { color: #1c4839; }
+    main { max-width: 890px; margin: 0 auto; padding: 53px 28px 72px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: #537263; font-size: .74rem; font-weight: 780; letter-spacing: .14em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #60a56e; box-shadow: 0 0 0 4px #d5e5d2; }
+    h1 { margin: 16px 0 9px; color: #142b32; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.7rem, 6vw, 4rem); font-weight: 500; letter-spacing: -.06em; line-height: 1.02; }
+    .intro { max-width: 650px; color: #52666a; font-size: 1.02rem; line-height: 1.7; margin: 0 0 20px; }
+    .scope { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 17px; padding: 8px 11px; border: 1px solid #d7e2d7; border-radius: 999px; background: #fff; color: #435b50; font-size: .78rem; font-weight: 680; }
+    .scope span:first-child { color: #4b9662; }
+    form, .card { background: rgba(255,255,255,.96); border: 1px solid #dce5dc; border-radius: 15px; padding: 23px; box-shadow: 0 14px 34px rgba(26,47,38,.055); }
+    label { display: block; color: #273d3c; font-weight: 720; margin-bottom: 10px; }
+    textarea { display: block; width: 100%; min-height: 115px; padding: 14px; border: 1px solid #cbd8ce; border-radius: 9px; background: #fbfcfa; color: inherit; font: inherit; line-height: 1.55; resize: vertical; transition: border-color .15s, box-shadow .15s; }
+    textarea:focus { outline: none; border-color: #6c9a73; box-shadow: 0 0 0 3px #6c9a7326; }
+    .examples-label { margin: 17px 0 9px; color: #718078; font-size: .72rem; font-weight: 760; letter-spacing: .1em; text-transform: uppercase; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; }
+    .example { margin: 0; padding: 8px 11px; border: 1px solid #dce5dc; border-radius: 999px; background: #fbfcfa; color: #496357; font: inherit; font-size: .79rem; font-weight: 560; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+    .example:hover { border-color: #a6c4a5; color: #24563e; background: #f2f7ef; }
+    button.ask { display: inline-flex; align-items: center; gap: 14px; margin-top: 20px; padding: 12px 16px; border: 1px solid #183c35; border-radius: 8px; color: #eff8ec; background: #183c35; font: inherit; font-size: .9rem; font-weight: 720; cursor: pointer; transition: background .15s, transform .15s; }
+    button.ask:hover:not(:disabled) { background: #245648; transform: translateY(-1px); }
+    button:disabled { opacity: .65; cursor: wait; }
+    #status { min-height: 21px; margin: 12px 0 0; color: #60736a; font-size: .88rem; }
+    #status.error { color: #a23838; }
+    .card { margin-top: 18px; }
+    .result-kicker { margin-bottom: 7px; color: #64866d; font-size: .69rem; font-weight: 780; letter-spacing: .12em; text-transform: uppercase; }
+    .card h2 { margin: 0 0 14px; color: #192f33; font-family: Georgia, "Times New Roman", serif; font-size: 1.75rem; font-weight: 500; letter-spacing: -.035em; }
+    #answer { color: #344d47; white-space: pre-wrap; line-height: 1.7; }
+    #answer p { margin: 0 0 12px; }
+    #answer p:last-child { margin-bottom: 0; }
+    #answer code { padding: 2px 5px; border-radius: 4px; color: #385d46; background: #edf3e9; font-family: ui-monospace, monospace; }
+    .answer-table-wrap { max-width: 100%; margin: 16px 0; overflow-x: auto; border: 1px solid #dce7dc; border-radius: 10px; background: #fff; }
+    .answer-table { width: 100%; border-collapse: separate; border-spacing: 0; color: #344b40; font-size: .9rem; line-height: 1.45; }
+    .answer-table th, .answer-table td { min-width: 110px; padding: 11px 15px; border-bottom: 1px solid #e8eee7; text-align: left; vertical-align: top; }
+    .answer-table th { color: #315243; background: #f1f6ee; font-size: .76rem; font-weight: 750; letter-spacing: .025em; }
+    .answer-table tbody tr:nth-child(even) { background: #f9fbf8; }
+    .answer-table tbody tr:last-child td { border-bottom: 0; }
+    .answer-table th:first-child { border-radius: 9px 0 0; }
+    .answer-table th:last-child { border-radius: 0 9px 0 0; }
+    details { margin-top: 19px; padding-top: 14px; border-top: 1px solid #e5ebe3; color: #476451; }
+    summary { cursor: pointer; font-size: .86rem; font-weight: 680; }
+    pre { overflow-x: auto; padding: 15px; border-radius: 9px; color: #d7e6dc; background: #19322f; font-size: .8rem; line-height: 1.6; white-space: pre-wrap; }
+    .session-card { border-color: #d2e0d2; background: #fbfcfa; }
+    .session-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .session-header h2 { margin-bottom: 8px; }
+    .session-description { margin: 0; color: #718078; font-size: .84rem; line-height: 1.5; }
+    .session-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+    .report-button, .csv-button, .print-button { display: inline-flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid #cbdccb; border-radius: 8px; color: #315b43; background: #f4f8f1; font: inherit; font-size: .81rem; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; }
+    .report-button:hover:not(:disabled), .csv-button:hover, .print-button:hover { border-color: #9fbd9f; background: #eaf3e6; }
+    .report-button:disabled { opacity: .5; cursor: not-allowed; }
+    .session-list-title { margin: 23px 0 9px; color: #718078; font-size: .69rem; font-weight: 760; letter-spacing: .1em; text-transform: uppercase; }
+    .session-reports { display: grid; gap: 9px; }
+    .session-report-group { padding: 13px; border: 1px solid #e2eae0; border-radius: 9px; background: #fff; }
+    .session-report-group.active { border-color: #b8d0b6; }
+    .session-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: #3a5948; font-size: .84rem; font-weight: 740; }
+    .active-tag { color: #4c875b; font-size: .65rem; font-weight: 780; letter-spacing: .08em; text-transform: uppercase; }
+    .snapshot-list { display: flex; flex-wrap: wrap; gap: 7px; }
+    .snapshot-button { padding: 7px 9px; border: 1px solid #e4eae1; border-radius: 7px; color: #547061; background: #f8faf6; font: inherit; font-size: .73rem; cursor: pointer; }
+    .snapshot-button:hover { border-color: #b8d0b6; background: #f0f6ed; }
+    .report-card { scroll-margin-top: 20px; }
+    .report-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .report-header h2 { margin-bottom: 17px; }
+    .report-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 24px; margin: 0 0 21px; padding: 16px; border: 1px solid #e4ebe1; border-radius: 10px; background: #f8faf6; }
+    .report-meta div:first-child { grid-column: 1 / -1; }
+    .report-meta dt { margin-bottom: 4px; color: #7a8980; font-size: .66rem; font-weight: 760; letter-spacing: .09em; text-transform: uppercase; }
+    .report-meta dd { margin: 0; color: #344b40; font-size: .85rem; line-height: 1.5; overflow-wrap: anywhere; }
+    .report-entry { margin-top: 24px; padding-top: 21px; border-top: 1px solid #e5ebe3; }
+    .report-entry:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+    .report-entry-label { margin-bottom: 6px; color: #64866d; font-size: .67rem; font-weight: 780; letter-spacing: .1em; text-transform: uppercase; }
+    .report-entry h3 { margin: 0 0 9px; color: #263e39; font-size: 1rem; line-height: 1.5; }
+    .report-entry-answer { color: #52665d; font-size: .87rem; line-height: 1.65; }
+    .report-entry-answer p { margin: 0 0 8px; }
+    .report-entry-answer p:last-child { margin-bottom: 0; }
+    .report-result { margin-top: 17px; }
+    .report-result h4 { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 9px; color: #315243; font-size: .82rem; }
+    .table-wrap { overflow-x: auto; border: 1px solid #e1e8df; border-radius: 9px; }
+    .report-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    .report-table th, .report-table td { padding: 10px 12px; border-bottom: 1px solid #e9eee7; text-align: left; white-space: nowrap; }
+    .report-table th { color: #567161; background: #f1f6ee; font-size: .7rem; font-weight: 760; letter-spacing: .035em; }
+    .report-table td { color: #344b40; }
+    .report-table tr:last-child td { border-bottom: 0; }
+    .report-table .number { text-align: right; font-variant-numeric: tabular-nums; }
+    .report-footnote { margin: 16px 0 0; color: #748078; font-size: .76rem; line-height: 1.55; }
+    .footnote { display: flex; gap: 9px; margin: 20px 3px 0; color: #718078; font-size: .81rem; line-height: 1.55; }
+    .footnote strong { color: #477d5a; }
+    footer { display: flex; justify-content: space-between; gap: 16px; max-width: 890px; margin: 0 auto; padding: 20px 28px 28px; border-top: 1px solid #e2e8e1; color: #74807b; font-size: .76rem; }
+    footer a { color: #466b56; font-weight: 700; }
+    @media (max-width: 600px) { .topbar { height: 64px; padding: 0 18px; } main { padding: 40px 18px 48px; } form, .card { padding: 17px; } footer { flex-direction: column; padding: 18px; } }
+    @media (max-width: 560px) { .report-meta { grid-template-columns: 1fr; } .report-meta div:first-child { grid-column: auto; } .report-header, .session-header { flex-direction: column; } .session-actions { justify-content: flex-start; } }
+    @media print { body * { visibility: hidden !important; } #report-preview, #report-preview * { visibility: visible !important; } #report-preview { position: absolute; inset: 0 auto auto 0; width: 100%; max-width: none; margin: 0; padding: 0; border: 0; box-shadow: none; } .print-button, .csv-button { display: none !important; } .report-entry { break-inside: avoid-page; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="SQL Assistant home"><span class="brand-mark" aria-hidden="true">⌘</span> SQL Assistant</a>
+    <a class="nav-link" href="/">← Project overview</a>
+  </header>
+  <main>
+    <div class="eyebrow">Chinook sample · Read only</div>
+    <h1>Ask a question of the data.</h1>
+    <p class="intro">Explore the Chinook music store database with plain English. The assistant turns your question into SQL, runs it safely, and explains what it finds.</p>
+    <div class="scope"><span>●</span> One sample database <span>·</span> No changes to records</div>
+    <form id="question-form">
+      <label for="question">Your question</label>
+      <textarea id="question" maxlength="2000" placeholder="Which artist has the most albums?" required></textarea>
+      <p class="examples-label">Try one of these</p>
+      <div class="examples" aria-label="Example questions">
+        <button class="example" type="button">Which artist has the most albums?</button>
+        <button class="example" type="button">How many tracks are in the database?</button>
+        <button class="example" type="button">Which country has the highest revenue?</button>
+      </div>
+      <button class="ask" id="submit" type="submit"><span class="button-label">Ask question</span><span aria-hidden="true">→</span></button>
+      <p id="status" role="status" aria-live="polite"></p>
+    </form>
+    <section id="response" class="card" hidden>
+      <div class="result-kicker">From the Chinook sample database</div>
+      <h2>Here’s what I found</h2>
+      <div id="answer"></div>
+      <details id="sql-details" hidden>
+        <summary>SQL the assistant used</summary>
+        <pre id="sql"></pre>
+      </details>
+    </section>
+    <section id="session-reports" class="card session-card" hidden aria-live="polite">
+      <div class="session-header">
+        <div><div class="result-kicker">Session workspace</div><h2>Reports</h2><p class="session-description" id="session-description"></p></div>
+        <div class="session-actions">
+          <button class="report-button" id="print-current" type="button" disabled>Print current report <span aria-hidden="true">↗</span></button>
+          <button class="report-button" id="new-report" type="button">New report <span aria-hidden="true">＋</span></button>
+        </div>
+      </div>
+      <p class="session-list-title">Reports in this browser session</p>
+      <div class="session-reports" id="session-report-list"></div>
+      <p class="report-footnote">Printing creates a snapshot. Later questions update the current report; choose <strong>New report</strong> to start a separate one. Reports stay in this tab and clear when it is refreshed or closed.</p>
+    </section>
+    <section id="report-preview" class="card report-card" hidden>
+      <div class="report-header">
+        <div><div class="result-kicker" id="report-label">SQL Assistant · report</div><h2 id="report-title">Session report</h2></div>
+        <button class="print-button" id="print-preview" type="button">Print / Save as PDF <span aria-hidden="true">↗</span></button>
+      </div>
+      <dl class="report-meta" id="report-meta"></dl>
+      <div id="report-entries"></div>
+      <p class="report-footnote">This report is a snapshot of the Chinook sample database. It does not change database records.</p>
+    </section>
+    <p class="footnote"><strong>Demo limits</strong><span>This version can answer questions about the bundled Chinook sample data only. It cannot connect to your database or change records.</span></p>
+  </main>
+  <footer><span>Review the SQL and result before using them to inform a decision.</span><a href="/">Back to project overview →</a></footer>
+  <script>
+    const form = document.querySelector("#question-form");
+    const input = document.querySelector("#question");
+    const button = document.querySelector("#submit");
+    const buttonLabel = document.querySelector(".button-label");
+    const status = document.querySelector("#status");
+    const response = document.querySelector("#response");
+    const answer = document.querySelector("#answer");
+    const sqlDetails = document.querySelector("#sql-details");
+    const sql = document.querySelector("#sql");
+    const sessionReports = document.querySelector("#session-reports");
+    const sessionDescription = document.querySelector("#session-description");
+    const sessionReportList = document.querySelector("#session-report-list");
+    const printCurrent = document.querySelector("#print-current");
+    const newReport = document.querySelector("#new-report");
+    const reportPreview = document.querySelector("#report-preview");
+    const reportEntries = document.querySelector("#report-entries");
+    const reportLabel = document.querySelector("#report-label");
+    const reportTitle = document.querySelector("#report-title");
+    const reportMeta = document.querySelector("#report-meta");
+    const printPreview = document.querySelector("#print-preview");
+    const MAX_SESSION_QUESTIONS = 20;
+    const reportGroups = [];
+    let activeReportId = null;
+    let previewState = null;
+    document.querySelectorAll(".example").forEach((example) => {
+      example.addEventListener("click", () => {
+        input.value = example.textContent.trim();
+        input.focus();
+      });
+    });
+
+    function renderAnswer(markdown) {
+      // Escape model text first, then add only a small, safe set of formatting tags.
+      const escapeHtml = (text) => text.replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[character]);
+      const lines = escapeHtml(markdown).replace(/\r/g, "").split("\n");
+      const blocks = [];
+      let paragraph = [];
+      let list = [];
+      const inline = (text) => text
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, "$1<em>$2</em>");
+      const flushParagraph = () => {
+        if (paragraph.length) {
+          blocks.push(`<p>${inline(paragraph.join("<br>"))}</p>`);
+          paragraph = [];
+        }
+      };
+      const flushList = () => {
+        if (list.length) {
+          blocks.push(`<ul>${list.map((item) => `<li>${inline(item)}</li>`).join("")}</ul>`);
+          list = [];
+        }
+      };
+      const splitTableRow = (line) => line.trim().replace(/^\|/, "").replace(/\|$/, "").split(/(?<!\\)\|/).map((cell) => cell.replace(/\\\|/g, "|").trim());
+      const isTableDivider = (line) => {
+        const cells = splitTableRow(line);
+        return line.includes("|") && cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+      };
+      const isPipeRow = (line) => /^\s*\|.+\|\s*$/.test(line);
+      const renderTable = (tableLines, hasDivider) => {
+        const headers = splitTableRow(tableLines[0]);
+        const rows = tableLines.slice(hasDivider ? 2 : 1).map(splitTableRow);
+        const head = headers.map((cell) => `<th scope="col">${inline(cell)}</th>`).join("");
+        const body = rows.map((row) => `<tr>${headers.map((_, index) => `<td>${inline(row[index] || "")}</td>`).join("")}</tr>`).join("");
+        return `<div class="answer-table-wrap" role="region" aria-label="Answer table" tabindex="0"><table class="answer-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+      };
+      for (let index = 0; index < lines.length; index += 1) {
+        const line = lines[index];
+        const hasMarkdownDivider = Boolean(lines[index + 1] && isTableDivider(lines[index + 1]));
+        const hasPipeRows = isPipeRow(line) && lines[index + 1] && isPipeRow(lines[index + 1]);
+        if (line.includes("|") && (hasMarkdownDivider || hasPipeRows)) {
+          flushParagraph();
+          flushList();
+          const tableLines = [line];
+          index += hasMarkdownDivider ? 2 : 1;
+          while (index < lines.length && isPipeRow(lines[index])) {
+            tableLines.push(lines[index]);
+            index += 1;
+          }
+          index -= 1;
+          blocks.push(renderTable(tableLines, hasMarkdownDivider));
+          continue;
+        }
+        const item = line.match(/^\s*[-*]\s+(.+)$/);
+        if (item) {
+          flushParagraph();
+          list.push(item[1]);
+        } else if (!line.trim()) {
+          flushParagraph();
+          flushList();
+        } else {
+          flushList();
+          paragraph.push(line);
+        }
+      }
+      flushParagraph();
+      flushList();
+      return blocks.join("");
+    }
+
+    function getResultSets(data) {
+      return (data.tool_results || []).filter((item) =>
+        item.result && Array.isArray(item.result.columns) && Array.isArray(item.result.rows)
+      );
+    }
+
+    function downloadCsv(resultSet, reportState, questionIndex, resultIndex) {
+      const quote = (value) => {
+        let text = String(value ?? "");
+        // Prevent spreadsheet apps from interpreting text cells as formulas.
+        if (typeof value === "string" && /^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+      };
+      const lines = [resultSet.result.columns, ...resultSet.result.rows]
+        .map((row) => row.map(quote).join(","));
+      const csv = `\uFEFF${lines.join("\r\n")}`;
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      const reportName = reportState.reportName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const version = reportState.version || "draft";
+      link.download = `sql-assistant-${reportName}-v${version}-q${questionIndex + 1}-result${resultIndex + 1}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
+    function getActiveReport() {
+      return reportGroups.find((report) => report.id === activeReportId) || null;
+    }
+
+    function ensureActiveReport() {
+      let report = getActiveReport();
+      if (!report) {
+        report = { id: reportGroups.length + 1, reportName: `Report ${reportGroups.length + 1}`, entries: [], snapshots: [] };
+        reportGroups.push(report);
+        activeReportId = report.id;
+      }
+      return report;
+    }
+
+    function renderSessionReports() {
+      if (!reportGroups.length) {
+        sessionReports.hidden = true;
+        return;
+      }
+      sessionReports.hidden = false;
+      const active = getActiveReport();
+      sessionDescription.textContent = active
+        ? `${active.reportName} is active · ${active.entries.length} question${active.entries.length === 1 ? "" : "s"}. New answers will be added here.`
+        : "Choose a report to preview, or start a new one.";
+      printCurrent.disabled = !active || !active.entries.length;
+      sessionReportList.replaceChildren();
+
+      reportGroups.forEach((report) => {
+        const group = document.createElement("div");
+        group.className = `session-report-group${report.id === activeReportId ? " active" : ""}`;
+        const heading = document.createElement("div");
+        heading.className = "session-group-heading";
+        const name = document.createElement("span");
+        name.textContent = `${report.reportName} · ${report.entries.length} question${report.entries.length === 1 ? "" : "s"}`;
+        heading.append(name);
+        if (report.id === activeReportId) {
+          const activeTag = document.createElement("span");
+          activeTag.className = "active-tag";
+          activeTag.textContent = "Active";
+          heading.append(activeTag);
+        }
+        group.append(heading);
+
+        const buttons = document.createElement("div");
+        buttons.className = "snapshot-list";
+        if (report.entries.length) {
+          const draftButton = document.createElement("button");
+          draftButton.className = "snapshot-button";
+          draftButton.type = "button";
+          draftButton.textContent = `Preview current ${report.snapshots.length ? "updated " : ""}report`;
+          draftButton.addEventListener("click", () => showDraft(report));
+          buttons.append(draftButton);
+        }
+        report.snapshots.forEach((snapshot) => {
+          const snapshotButton = document.createElement("button");
+          snapshotButton.className = "snapshot-button";
+          snapshotButton.type = "button";
+          snapshotButton.textContent = `Version ${snapshot.version} · ${snapshot.entries.length} questions · ${new Date(snapshot.generatedAt).toLocaleTimeString()}`;
+          snapshotButton.addEventListener("click", () => showSnapshot(snapshot));
+          buttons.append(snapshotButton);
+        });
+        if (!report.entries.length && !report.snapshots.length) {
+          const waiting = document.createElement("span");
+          waiting.className = "report-footnote";
+          waiting.textContent = "Ask a question to add it to this report.";
+          buttons.append(waiting);
+        }
+        group.append(buttons);
+        sessionReportList.append(group);
+      });
+    }
+
+    function makeMeta(label, value) {
+      const item = document.createElement("div");
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const description = document.createElement("dd");
+      description.textContent = value;
+      item.append(term, description);
+      return item;
+    }
+
+    function renderResultTable(resultSet, reportState, questionIndex, resultIndex) {
+      const section = document.createElement("section");
+      section.className = "report-result";
+      const heading = document.createElement("h4");
+      const title = document.createElement("span");
+      title.textContent = `Query result ${resultIndex + 1}${resultSet.result.truncated ? " · first 100 rows" : ""}`;
+      const exportButton = document.createElement("button");
+      exportButton.className = "csv-button";
+      exportButton.type = "button";
+      exportButton.textContent = "Download CSV ↓";
+      exportButton.addEventListener("click", () => downloadCsv(resultSet, reportState, questionIndex, resultIndex));
+      heading.append(title, exportButton);
+      section.append(heading);
+
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "table-wrap";
+      const table = document.createElement("table");
+      table.className = "report-table";
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      resultSet.result.columns.forEach((column, columnIndex) => {
+        const cell = document.createElement("th");
+        cell.scope = "col";
+        cell.textContent = String(column);
+        if (resultSet.result.rows.every((row) => typeof row[columnIndex] === "number")) cell.className = "number";
+        headerRow.append(cell);
+      });
+      thead.append(headerRow);
+      table.append(thead);
+      const tbody = document.createElement("tbody");
+      resultSet.result.rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        row.forEach((value) => {
+          const cell = document.createElement("td");
+          cell.textContent = value == null ? "—" : String(value);
+          if (typeof value === "number") cell.className = "number";
+          tr.append(cell);
+        });
+        tbody.append(tr);
+      });
+      table.append(tbody);
+      tableWrap.append(table);
+      section.append(tableWrap);
+      return section;
+    }
+
+    function renderReport(reportState) {
+      previewState = reportState;
+      reportLabel.textContent = `SQL Assistant · ${reportState.reportName} · ${reportState.versionLabel}`;
+      reportTitle.textContent = "Session report";
+      reportMeta.replaceChildren(
+        makeMeta("Questions included", String(reportState.entries.length)),
+        makeMeta("Source", "Chinook sample database"),
+        makeMeta("Generated", new Date(reportState.generatedAt).toLocaleString())
+      );
+      reportEntries.replaceChildren();
+
+      reportState.entries.forEach((entry, questionIndex) => {
+        const article = document.createElement("article");
+        article.className = "report-entry";
+        const kicker = document.createElement("div");
+        kicker.className = "report-entry-label";
+        kicker.textContent = `Question ${questionIndex + 1} · ${new Date(entry.createdAt).toLocaleString()}`;
+        const question = document.createElement("h3");
+        question.textContent = entry.question;
+        const answerText = document.createElement("div");
+        answerText.className = "report-entry-answer";
+        answerText.innerHTML = renderAnswer(entry.answer || "No answer was returned.");
+        article.append(kicker, question, answerText);
+
+        if (entry.queries.length) {
+          const queries = document.createElement("details");
+          const summary = document.createElement("summary");
+          summary.textContent = "SQL used for this question";
+          const queryText = document.createElement("pre");
+          queryText.textContent = entry.queries.join("\n\n");
+          queries.append(summary, queryText);
+          article.append(queries);
+        }
+
+        const resultSets = getResultSets(entry.response);
+        resultSets.forEach((resultSet, resultIndex) => {
+          article.append(renderResultTable(resultSet, reportState, questionIndex, resultIndex));
+        });
+        if (!resultSets.length) {
+          const note = document.createElement("p");
+          note.className = "report-footnote";
+          note.textContent = "No tabular SQL result was returned for this answer.";
+          article.append(note);
+        }
+        reportEntries.append(article);
+      });
+      reportPreview.hidden = false;
+      reportPreview.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function showDraft(report) {
+      renderReport({
+        reportId: report.id,
+        reportName: report.reportName,
+        version: null,
+        versionLabel: report.snapshots.length ? "Updated draft" : "Draft",
+        generatedAt: new Date().toISOString(),
+        entries: report.entries,
+        isDraft: true,
+      });
+    }
+
+    function showSnapshot(snapshot) {
+      renderReport({ ...snapshot, versionLabel: `Version ${snapshot.version}`, isDraft: false });
+    }
+
+    function saveSnapshot(report) {
+      const snapshot = {
+        reportId: report.id,
+        reportName: report.reportName,
+        version: report.snapshots.length + 1,
+        generatedAt: new Date().toISOString(),
+        entries: JSON.parse(JSON.stringify(report.entries)),
+      };
+      report.snapshots.push(snapshot);
+      renderSessionReports();
+      return snapshot;
+    }
+
+    function printReport(snapshot) {
+      showSnapshot(snapshot);
+      window.requestAnimationFrame(() => window.print());
+    }
+
+    printCurrent.addEventListener("click", () => {
+      const active = getActiveReport();
+      if (!active || !active.entries.length) return;
+      printReport(saveSnapshot(active));
+    });
+
+    newReport.addEventListener("click", () => {
+      const active = getActiveReport();
+      if (active && !active.entries.length) {
+        status.textContent = `${active.reportName} is ready. Ask a question to add it.`;
+        return;
+      }
+      const next = { id: reportGroups.length + 1, reportName: `Report ${reportGroups.length + 1}`, entries: [], snapshots: [] };
+      reportGroups.push(next);
+      activeReportId = next.id;
+      reportPreview.hidden = true;
+      renderSessionReports();
+      status.textContent = `${next.reportName} started. New answers will be added to it.`;
+      sessionReports.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    printPreview.addEventListener("click", () => {
+      if (!previewState) return;
+      if (previewState.isDraft) {
+        const report = reportGroups.find((item) => item.id === previewState.reportId);
+        if (!report || !report.entries.length) return;
+        printReport(saveSnapshot(report));
+      } else {
+        window.requestAnimationFrame(() => window.print());
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const question = input.value.trim();
+      if (!question) return;
+      const questionCount = reportGroups.reduce((total, report) => total + report.entries.length, 0);
+      if (questionCount >= MAX_SESSION_QUESTIONS) {
+        status.textContent = `This browser session can hold up to ${MAX_SESSION_QUESTIONS} questions. Save your reports and open a new tab to start a fresh session.`;
+        return;
+      }
+      button.disabled = true;
+      buttonLabel.textContent = "Working on it…";
+      status.classList.remove("error");
+      status.textContent = "Thinking…";
+      response.hidden = true;
+      reportPreview.hidden = true;
+      try {
+        const result = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+        const data = await result.json();
+        if (!result.ok) throw new Error(data.detail || "The request failed.");
+        answer.innerHTML = renderAnswer(data.answer || "No answer was returned.");
+        sql.textContent = (data.queries || []).join("\n\n") || "No SQL query was needed.";
+        sqlDetails.hidden = !(data.queries || []).length;
+        response.hidden = false;
+        const report = ensureActiveReport();
+        report.entries.push({
+          question,
+          answer: data.answer || "No answer was returned.",
+          queries: data.queries || [],
+          response: { tool_results: data.tool_results || [] },
+          createdAt: new Date().toISOString(),
+        });
+        renderSessionReports();
+        status.textContent = "";
+      } catch (error) {
+        status.classList.add("error");
+        status.textContent = error.message || "Could not reach the assistant.";
+      } finally {
+        button.disabled = false;
+        buttonLabel.textContent = "Ask question";
+      }
+    });
+  </script>
+</body>
+</html>

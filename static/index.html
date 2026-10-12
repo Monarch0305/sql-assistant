@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A text-to-SQL demo that turns plain-English questions into read-only answers from the Chinook sample database.">
+  <title>SQL Assistant — ask your data</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #162832; background: #f5f7f4; font-synthesis: none; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; }
+    a { color: inherit; text-decoration: none; }
+    .topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; max-width: 1180px; padding: 0 28px; margin: 0 auto; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: .91rem; font-weight: 760; letter-spacing: -.02em; }
+    .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: #c9f779; background: #19332e; font-size: .95rem; }
+    .nav-link { display: inline-flex; align-items: center; gap: 9px; color: #304a50; font-size: .88rem; font-weight: 680; }
+    .nav-link span { color: #608a6e; }
+    .hero-wrap { padding: 42px 28px 64px; background: #e8eee8; border-top: 1px solid #e0e7df; border-bottom: 1px solid #dce5dc; overflow: hidden; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(350px, .86fr); align-items: center; gap: 60px; max-width: 1124px; min-height: 500px; margin: 0 auto; }
+    .eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 23px; color: #537263; font-size: .74rem; font-weight: 780; letter-spacing: .14em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #60a56e; box-shadow: 0 0 0 4px #d5e5d2; }
+    h1 { max-width: 660px; margin: 0; color: #142b32; font-family: Georgia, "Times New Roman", serif; font-size: clamp(3.15rem, 6.2vw, 5.15rem); font-weight: 500; letter-spacing: -.065em; line-height: .99; }
+    h1 em { color: #477d5a; font-weight: 500; }
+    .hero-copy { max-width: 520px; margin: 23px 0 27px; color: #52666a; font-size: 1.08rem; line-height: 1.75; }
+    .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; }
+    .primary { display: inline-flex; align-items: center; gap: 18px; padding: 14px 17px; border: 1px solid #183c35; border-radius: 8px; color: #eff8ec; background: #183c35; font-size: .92rem; font-weight: 720; box-shadow: 0 5px 14px #183c3521; transition: transform .15s, background .15s; }
+    .primary:hover { background: #245648; transform: translateY(-2px); }
+    .secondary { color: #385650; font-size: .9rem; font-weight: 700; }
+    .secondary:hover { color: #1c4839; }
+    .demo-note { display: flex; align-items: flex-start; gap: 9px; max-width: 490px; margin-top: 22px; color: #697975; font-size: .79rem; line-height: 1.55; }
+    .demo-note b { color: #2e7151; }
+    .showcase { position: relative; padding: 19px; border: 1px solid #d7e0d7; border-radius: 18px; background: #f8faf7; box-shadow: 0 25px 70px #1a35321a; transform: rotate(1.2deg); }
+    .showcase::before { content: ""; position: absolute; z-index: -1; inset: 25px -20px -20px 28px; border-radius: 19px; background: #c7d7c7; transform: rotate(-3deg); }
+    .window-bar { display: flex; align-items: center; justify-content: space-between; padding: 1px 1px 17px; color: #71817b; font-size: .72rem; font-weight: 680; letter-spacing: .06em; text-transform: uppercase; }
+    .dots { display: flex; gap: 5px; }
+    .dots i { width: 7px; height: 7px; border-radius: 50%; background: #c6d2c7; }
+    .question-card { padding: 16px; border: 1px solid #e1e8df; border-radius: 11px; background: white; }
+    .question-label { margin-bottom: 9px; color: #86918a; font-size: .67rem; font-weight: 760; letter-spacing: .1em; text-transform: uppercase; }
+    .question-text { color: #263c3b; font-family: Georgia, "Times New Roman", serif; font-size: 1.16rem; line-height: 1.45; }
+    .flow { display: flex; align-items: center; gap: 8px; margin: 15px 0; color: #6a7b73; font-size: .66rem; font-weight: 720; letter-spacing: .08em; text-transform: uppercase; }
+    .flow i { height: 1px; flex: 1; background: #d5dfd4; }
+    .sql-card { overflow: hidden; padding: 13px 15px; border-radius: 10px; color: #c8e3cc; background: #19322f; }
+    .sql-label { margin-bottom: 8px; color: #8cab98; font-size: .65rem; font-weight: 760; letter-spacing: .1em; text-transform: uppercase; }
+    .sql-card code { color: #d7e6dc; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .72rem; line-height: 1.55; white-space: pre-wrap; }
+    .answer-card { display: flex; align-items: center; gap: 13px; margin-top: 11px; padding: 14px; border: 1px solid #dce9d8; border-radius: 10px; background: #eef5e9; }
+    .answer-icon { display: grid; flex: 0 0 34px; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #3d7953; background: #dcebd3; font-size: 1.1rem; }
+    .answer-caption { margin-bottom: 3px; color: #6b7f70; font-size: .65rem; font-weight: 760; letter-spacing: .08em; text-transform: uppercase; }
+    .answer-main { color: #264735; font-size: .88rem; font-weight: 700; }
+    .answer-sub { margin-top: 3px; color: #698071; font-size: .73rem; }
+    .section { max-width: 1124px; margin: 0 auto; padding: 76px 28px; }
+    .section-kicker { margin-bottom: 12px; color: #64866d; font-size: .72rem; font-weight: 780; letter-spacing: .14em; text-transform: uppercase; }
+    h2 { margin: 0; color: #192f33; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.1rem, 4vw, 3.1rem); font-weight: 500; letter-spacing: -.04em; line-height: 1.1; }
+    .section-intro { max-width: 600px; margin: 14px 0 34px; color: #647373; font-size: .98rem; line-height: 1.7; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .step { min-height: 194px; padding: 21px; border: 1px solid #e0e7df; border-radius: 13px; background: #fff; }
+    .step-num { display: grid; place-items: center; width: 33px; height: 33px; margin-bottom: 25px; border-radius: 10px; color: #38654a; background: #e7f0e2; font-size: .77rem; font-weight: 800; }
+    .step h3 { margin: 0 0 8px; color: #243a3b; font-size: .98rem; }
+    .step p { margin: 0; color: #6a7978; font-size: .87rem; line-height: 1.6; }
+    .roadmap { padding: 0 28px 78px; }
+    .roadmap-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; max-width: 1068px; margin: 0 auto; padding: 32px; border: 1px solid #d7e2d7; border-radius: 17px; background: #eaf1e8; }
+    .roadmap h2 { font-size: 2rem; }
+    .roadmap p { margin: 12px 0 0; color: #60716a; font-size: .91rem; line-height: 1.7; }
+    .status-list { display: grid; gap: 11px; align-content: center; }
+    .status-item { display: flex; align-items: center; gap: 11px; color: #415b50; font-size: .86rem; }
+    .status-item b { display: grid; flex: 0 0 24px; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #3e8055; background: #d8e9d4; font-size: .76rem; }
+    .status-item.future b { color: #7a816b; background: #dfe5d8; }
+    footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; max-width: 1124px; margin: 0 auto; padding: 22px 28px 28px; border-top: 1px solid #e2e8e1; color: #74807b; font-size: .76rem; }
+    footer a { color: #466b56; font-weight: 700; }
+    @media (max-width: 800px) { .hero { grid-template-columns: 1fr; gap: 38px; padding: 20px 0 6px; } .hero-wrap { padding-top: 28px; } .showcase { max-width: 540px; margin: 0 auto; width: 100%; } .hero-copy { max-width: 620px; } .steps { grid-template-columns: 1fr; } .step { min-height: unset; } .step-num { margin-bottom: 18px; } .roadmap-inner { grid-template-columns: 1fr; gap: 24px; } }
+    @media (max-width: 520px) { .topbar { height: 64px; padding: 0 18px; } .nav-link { font-size: .78rem; } .hero-wrap { padding: 30px 19px 48px; } .hero { min-height: unset; } .eyebrow { margin-bottom: 18px; } .hero-copy { font-size: 1rem; } .showcase { padding: 13px; } .section { padding: 55px 19px; } .roadmap { padding: 0 19px 52px; } .roadmap-inner { padding: 23px; } footer { align-items: flex-start; flex-direction: column; padding: 19px; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="SQL Assistant home"><span class="brand-mark" aria-hidden="true">⌘</span> SQL Assistant</a>
+    <a class="nav-link" href="/assistant">Open the demo <span aria-hidden="true">↗</span></a>
+  </header>
+  <main>
+    <section class="hero-wrap">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">A text-to-SQL project demo</div>
+          <h1>Ask your data.<br><em>Understand the answer.</em></h1>
+          <p class="hero-copy">SQL Assistant turns a plain-English question into read-only SQL, runs it against a sample database, and explains the result in everyday language.</p>
+          <div class="actions">
+            <a class="primary" href="/assistant">Try the Chinook demo <span aria-hidden="true">→</span></a>
+            <a class="secondary" href="#how-it-works">See how it works ↓</a>
+          </div>
+          <p class="demo-note"><b>DEMO</b><span>Today, it uses one bundled database: Chinook, a sample music store. It cannot connect to your own database or change records.</span></p>
+        </div>
+        <aside class="showcase" aria-label="Illustration showing a question becoming a SQL result">
+          <div class="window-bar"><span>SQL Assistant · sample</span><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <div class="question-card">
+            <div class="question-label">Your question</div>
+            <div class="question-text">“Which artist has the most albums?”</div>
+          </div>
+          <div class="flow"><span>Question</span><i></i><span>SQL</span><i></i><span>Answer</span></div>
+          <div class="sql-card"><div class="sql-label">Read-only query</div><code>SELECT Artist.Name, COUNT(*)
+FROM Album JOIN Artist USING (ArtistId)
+GROUP BY Artist.ArtistId
+ORDER BY COUNT(*) DESC LIMIT 1;</code></div>
+          <div class="answer-card">
+            <div class="answer-icon" aria-hidden="true">↗</div>
+            <div><div class="answer-caption">Answer from the sample data</div><div class="answer-main">Iron Maiden · 21 albums</div><div class="answer-sub">Query result explained in plain English</div></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+    <section class="section" id="how-it-works">
+      <div class="section-kicker">A simple path from question to result</div>
+      <h2>SQL behind the scenes.<br>Clarity up front.</h2>
+      <p class="section-intro">The model proposes a query; Python checks and runs it with read-only database access. The answer is grounded in the returned rows.</p>
+      <div class="steps">
+        <article class="step"><div class="step-num">01</div><h3>Ask in plain English</h3><p>Start with a question about the sample music store, such as top artists or sales by country.</p></article>
+        <article class="step"><div class="step-num">02</div><h3>Build and run safe SQL</h3><p>The model requests the SQL tool. The app runs bounded, read-only queries against the bundled database.</p></article>
+        <article class="step"><div class="step-num">03</div><h3>Review the explanation</h3><p>Get a concise answer with the SQL available to inspect. Check the result before using it to make a decision.</p></article>
+      </div>
+    </section>
+    <section class="roadmap" aria-labelledby="roadmap-title">
+      <div class="roadmap-inner">
+        <div><div class="section-kicker">Where this can go</div><h2 id="roadmap-title">From sample data to business data.</h2><p>The longer-term goal is to connect to business databases directly, so teams can explore their own information and use evidence to inform decisions. That requires careful access controls, database-specific setup, and stronger evaluation.</p></div>
+        <div class="status-list" aria-label="Current demo and future plans">
+          <div class="status-item"><b>✓</b><span><strong>Now:</strong> one Chinook sample database</span></div>
+          <div class="status-item"><b>✓</b><span><strong>Now:</strong> read-only SQL and answer explanations</span></div>
+          <div class="status-item future"><b>→</b><span><strong>Future:</strong> more database connections</span></div>
+          <div class="status-item future"><b>→</b><span><strong>Future:</strong> controls for teams and business use</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer><span>An educational project demo. Not a production decision system.</span><a href="/assistant">Try the sample database →</a></footer>
+</body>
+</html>
